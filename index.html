@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Waypoint — iPhone Demo</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:#1a1a2e;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:'Inter',-apple-system,sans-serif;padding:40px 20px;}
+
+/* ── PHONE SHELL ─── */
+.shell{width:393px;height:852px;background:#000;border-radius:54px;
+  box-shadow:0 0 0 1px #3a3a3c,0 0 0 3px #1c1c1e,0 0 0 4.5px #3a3a3c,0 50px 120px rgba(0,0,0,0.75);
+  position:relative;overflow:hidden;flex-shrink:0;}
+.shell::before{content:'';position:absolute;left:-3px;top:160px;width:3px;height:36px;background:#3a3a3c;border-radius:2px 0 0 2px;box-shadow:0 52px 0 #3a3a3c,0 104px 0 #3a3a3c;}
+.shell::after{content:'';position:absolute;right:-3px;top:200px;width:3px;height:68px;background:#3a3a3c;border-radius:0 2px 2px 0;}
+.di{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:126px;height:37px;background:#000;border-radius:20px;z-index:200;display:flex;align-items:center;justify-content:center;gap:10px;}
+.di-cam{width:12px;height:12px;border-radius:50%;background:#111;border:1px solid #222;}
+.di-led{width:8px;height:8px;border-radius:50%;background:#0d0d0d;}
+
+/* ── SCREEN ─── */
+.screen{position:absolute;inset:0;border-radius:54px;overflow:hidden;background:#f2f2f7;display:flex;flex-direction:column;}
+
+/* ── STATUS BAR ─── */
+.sbar{height:59px;padding:14px 28px 0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;z-index:50;position:absolute;top:0;left:0;right:0;}
+.sbar.on-map{color:#fff;}
+.sbar.on-light{color:#000;}
+.stime{font-size:15px;font-weight:600;letter-spacing:-0.3px;}
+.sicons{display:flex;align-items:center;gap:5px;}
+.sig{display:flex;align-items:flex-end;gap:1.5px;height:12px;}
+.sig span{width:3px;background:currentColor;border-radius:1px;}
+.batt{width:25px;height:12px;border-radius:3px;border:1.5px solid currentColor;position:relative;display:flex;align-items:center;padding:2px;}
+.batt::after{content:'';position:absolute;right:-4px;top:3px;width:2px;height:6px;background:currentColor;border-radius:0 1px 1px 0;}
+.batt-fill{height:100%;width:78%;background:currentColor;border-radius:1px;}
+
+/* ── PAGES ─── */
+.pages{flex:1;overflow:hidden;position:relative;padding-top:59px;}
+.page{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden;}
+.page.active{display:flex;}
+
+/* ── TAB BAR ─── */
+.tabs{height:83px;background:rgba(248,248,248,0.95);backdrop-filter:blur(20px);border-top:0.5px solid rgba(0,0,0,0.12);display:flex;align-items:flex-start;padding-top:8px;flex-shrink:0;}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:4px 0;}
+.tab svg{width:24px;height:24px;}
+.tab span{font-size:10px;font-weight:500;}
+.tab.on svg,.tab.on span{color:#007AFF;}
+.tab:not(.on) svg,.tab:not(.on) span{color:#8e8e93;}
+
+/* ══ PAGE 1: MAP ══ */
+#pg-map{background:#e8ead3;}
+.map-wrap{flex:1;position:relative;overflow:hidden;}
+.map-svg-el{width:100%;height:100%;display:block;}
+.map-searchbar{position:absolute;top:10px;left:12px;right:12px;background:#fff;border-radius:13px;padding:10px 14px;display:flex;align-items:center;gap:8px;box-shadow:0 2px 14px rgba(0,0,0,0.13);z-index:20;}
+.map-searchbar input{border:none;outline:none;font-family:'Inter',sans-serif;font-size:14px;color:#1c1c1e;flex:1;background:transparent;}
+.map-searchbar input::placeholder{color:#8e8e93;}
+.map-btns{position:absolute;right:14px;bottom:10px;display:flex;flex-direction:column;gap:1px;z-index:20;}
+.map-btn{width:42px;height:42px;background:#fff;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.18);font-size:20px;color:#3c4043;}
+.map-btn:first-child{border-radius:8px 8px 0 0;}
+.map-btn:last-child{border-radius:0 0 8px 8px;}
+.locate-btn{position:absolute;right:14px;bottom:66px;width:42px;height:42px;background:#fff;border:none;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.18);z-index:20;}
+.route-card{background:#fff;border-radius:20px 20px 0 0;padding:12px 18px 16px;z-index:20;box-shadow:0 -3px 16px rgba(0,0,0,0.1);flex-shrink:0;}
+.rhandle{width:36px;height:4px;background:#d1d1d6;border-radius:2px;margin:0 auto 12px;}
+.rtitle{font-size:17px;font-weight:700;color:#1c1c1e;letter-spacing:-0.4px;}
+.rsub{font-size:12px;color:#8e8e93;margin-top:2px;}
+.rlegs{display:flex;gap:7px;margin-top:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px;}
+.rlegs::-webkit-scrollbar{display:none;}
+.rpill{flex-shrink:0;display:flex;align-items:center;gap:4px;padding:6px 11px;border-radius:20px;font-size:12px;font-weight:600;white-space:nowrap;}
+.rpill.walk{background:#e8f4e8;color:#1a7f37;}
+.rpill.bus{background:#e3f0ff;color:#0057b8;}
+.rpill.cable{background:#f0e8ff;color:#6a1fb5;}
+.rpill.dest{background:#ffeee8;color:#d4380d;}
+.rstats{display:flex;border:1px solid #f0f0f0;border-radius:12px;overflow:hidden;margin-top:12px;}
+.rstat{flex:1;padding:9px;text-align:center;border-right:1px solid #f0f0f0;}
+.rstat:last-child{border-right:none;}
+.rstat-v{font-size:18px;font-weight:700;color:#1c1c1e;letter-spacing:-0.5px;}
+.rstat-l{font-size:10px;color:#8e8e93;margin-top:2px;}
+
+/* ══ PAGE 2: NEARBY ══ */
+#pg-nearby{background:#f2f2f7;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+#pg-nearby::-webkit-scrollbar{display:none;}
+.nscroll{padding:16px 0 24px;display:flex;flex-direction:column;gap:6px;}
+.nhead{padding:0 16px 12px;}
+.ntitle{font-size:22px;font-weight:700;color:#1c1c1e;letter-spacing:-0.5px;}
+.nsub{font-size:13px;color:#8e8e93;margin-top:2px;line-height:1.35;}
+.nbanner{margin:0 16px 14px;background:linear-gradient(135deg,#007AFF 0%,#0051d5 100%);border-radius:16px;padding:14px 16px;color:#fff;}
+.nbanner-t{font-size:15px;font-weight:600;}
+.nbanner-s{font-size:12px;opacity:0.88;margin-top:4px;line-height:1.4;}
+.nsec{padding-top:14px;}
+.nsec-lbl{font-size:11px;font-weight:700;color:#8e8e93;text-transform:uppercase;letter-spacing:0.08em;margin:0 16px 10px;}
+.nrow{display:flex;gap:12px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:0 16px 4px;scroll-snap-type:x mandatory;}
+.nrow::-webkit-scrollbar{display:none;}
+.ncard{flex:0 0 200px;scroll-snap-align:start;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06);}
+.ncard-img{height:118px;width:100%;object-fit:cover;display:block;background:#e5e5ea;}
+.ncard-body{padding:11px 12px 13px;}
+.ncard-h{font-size:14px;font-weight:600;color:#1c1c1e;letter-spacing:-0.2px;line-height:1.25;}
+.ncard-d{font-size:11px;color:#8e8e93;margin-top:4px;line-height:1.35;}
+.ncard-meta{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap;}
+.ntag{font-size:10px;font-weight:600;padding:3px 8px;border-radius:20px;background:#f2f2f7;color:#636366;}
+.ntag.food{background:#fff3e0;color:#c05621;}
+.ntag.culture{background:#f0e8ff;color:#6a1fb5;}
+.ntag.sights{background:#e3f0ff;color:#0057b8;}
+.ndist{font-size:10px;font-weight:600;color:#007AFF;}
+.ttrack{width:51px;height:31px;border-radius:16px;background:#e5e5ea;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
+.ttrack.on{background:#34c759;}
+.tknob{position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,0.2);transition:left .2s;}
+.ttrack.on .tknob{left:22px;}
+.tlbl{font-size:15px;font-weight:600;color:#1c1c1e;}
+.tsub{font-size:12px;color:#8e8e93;margin-top:2px;}
+
+/* ══ PAGE 3: ITINERARY ══ */
+#pg-itin{background:#f2f2f7;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+#pg-itin::-webkit-scrollbar{display:none;}
+.iscroll{padding:0 16px 24px;}
+.ihead{padding:16px 0 10px;}
+.ititle{font-size:22px;font-weight:700;color:#1c1c1e;letter-spacing:-0.5px;}
+.isub{font-size:13px;color:#8e8e93;margin-top:2px;}
+.igps-row{display:flex;align-items:center;gap:10px;background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:12px;}
+.igps-lbl{flex:1;font-size:14px;font-weight:500;color:#1c1c1e;}
+.igps-sub{font-size:11px;color:#8e8e93;}
+.loc-banner{border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.loc-banner.sim{background:#FF9500;}
+.loc-banner.gps{background:#007AFF;}
+.lbico{font-size:20px;}
+.lbtxt{flex:1;}
+.lbtitle{font-size:13px;font-weight:600;color:#fff;}
+.lbsub{font-size:11px;color:rgba(255,255,255,0.75);margin-top:1px;}
+.lbbtn{background:rgba(255,255,255,0.22);border:none;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:600;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;}
+.isec-lbl{font-size:11px;font-weight:700;color:#8e8e93;text-transform:uppercase;letter-spacing:0.08em;margin:14px 0 8px 4px;}
+.iitem{display:flex;gap:10px;padding:0 0 0 2px;}
+.itline{display:flex;flex-direction:column;align-items:center;width:38px;flex-shrink:0;padding-top:2px;}
+.inode{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.inode.done{background:#e8f4e8;border:2px solid #34c759;}
+.inode.now{background:#007AFF;border:2px solid #007AFF;animation:nowglow 2s ease-in-out infinite;}
+@keyframes nowglow{0%,100%{box-shadow:0 0 0 0 rgba(0,122,255,0.4);}50%{box-shadow:0 0 0 7px rgba(0,122,255,0);}}
+.inode.next{background:#fff7e6;border:2px solid #FF9500;}
+.inode.later{background:#f2f2f7;border:2px solid #d1d1d6;}
+.iline{width:2px;flex:1;min-height:18px;margin:3px 0;}
+.iline.done{background:#34c759;}
+.iline.active{background:linear-gradient(to bottom,#007AFF,#FF9500);}
+.iline.pending{background:#d1d1d6;}
+.icontent{flex:1;background:#fff;border-radius:14px;padding:11px 13px;margin-bottom:8px;}
+.icontent.nowcard{border:1.5px solid #007AFF;background:#f0f7ff;}
+.icontent.nextcard{border:1.5px solid #FF9500;background:#fff9f0;}
+.itime{font-size:11px;font-weight:600;color:#8e8e93;}
+.iname{font-size:15px;font-weight:600;color:#1c1c1e;margin:2px 0;letter-spacing:-0.2px;}
+.idesc{font-size:12px;color:#8e8e93;line-height:1.4;}
+.ibadge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;margin-top:6px;margin-right:4px;}
+.ib-now{background:#e3f0ff;color:#0057b8;}
+.ib-next{background:#fff3e0;color:#c05000;}
+.ib-done{background:#e8f4e8;color:#1a7f37;}
+.ib-dist{background:#f2f2f7;color:#8e8e93;}
+.ndot{width:6px;height:6px;border-radius:50%;background:#007AFF;animation:ndotpulse 1.5s infinite;}
+@keyframes ndotpulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.etabar{height:3px;background:#e5e5ea;border-radius:2px;margin-top:7px;overflow:hidden;}
+.etafill{height:100%;border-radius:2px;background:#007AFF;transition:width 0.8s;}
+@keyframes flash{from{opacity:0.4;transform:translateY(-2px);}to{opacity:1;transform:translateY(0);}}
+.flash{animation:flash 0.3s ease;}
+@keyframes bfloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-2px);}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="di"><div class="di-led"></div><div class="di-cam"></div><div class="di-led"></div></div>
+
+  <div class="screen">
+    <div class="sbar on-map" id="sbar">
+      <div class="stime" id="stime">9:41</div>
+      <div class="sicons">
+        <div class="sig"><span style="height:3px"></span><span style="height:5px"></span><span style="height:8px"></span><span style="height:11px"></span></div>
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor">
+          <path d="M8 2.4C10.5 2.4 12.7 3.4 14.3 5L16 3.3C13.9 1.2 11.1 0 8 0 4.9 0 2.1 1.2 0 3.3L1.7 5C3.3 3.4 5.5 2.4 8 2.4Z" opacity=".4"/>
+          <path d="M8 5.6C9.6 5.6 11.1 6.2 12.2 7.3L14 5.5C12.4 3.9 10.3 3 8 3 5.7 3 3.6 3.9 2 5.5L3.8 7.3C4.9 6.2 6.4 5.6 8 5.6Z" opacity=".7"/>
+          <path d="M8 8.8C9.1 8.8 10.1 9.2 10.8 9.9L8 13 5.2 9.9C5.9 9.2 6.9 8.8 8 8.8Z"/>
+        </svg>
+        <div class="batt"><div class="batt-fill"></div></div>
+      </div>
+    </div>
+
+    <div class="pages">
+
+      <!-- ══ PAGE 1: MAP ══ -->
+      <div class="page active" id="pg-map">
+        <div class="map-wrap">
+          <!-- Map search overlay -->
+          <div class="map-searchbar">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" value="Marina Bay → Sentosa" readonly>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#007AFF"/><path d="M12 8v4l3 3" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+          </div>
+
+          <!-- Full map SVG -->
+          <svg id="msvg" class="map-svg-el" viewBox="0 0 393 520" preserveAspectRatio="xMidYMid slice">
+            <!-- Land base -->
+            <rect width="393" height="520" fill="#e8ead3"/>
+            <!-- Water bodies -->
+            <ellipse cx="310" cy="455" rx="120" ry="90" fill="#aadaff"/>
+            <rect x="170" y="390" width="180" height="130" fill="#aadaff"/>
+            <ellipse cx="330" cy="495" rx="75" ry="55" fill="#9ad5ff"/>
+            <!-- Parks -->
+            <ellipse cx="252" cy="310" rx="32" ry="18" fill="#c8e6a0"/>
+            <rect x="175" y="270" width="55" height="36" rx="4" fill="#c8e6a0"/>
+            <ellipse cx="318" cy="238" rx="22" ry="16" fill="#c8e6a0"/>
+            <!-- Background roads -->
+            <g stroke="#fff" fill="none">
+              <line x1="0" y1="168" x2="393" y2="150" stroke-width="10"/>
+              <line x1="0" y1="235" x2="393" y2="225" stroke-width="8"/>
+              <line x1="0" y1="310" x2="393" y2="302" stroke-width="6"/>
+              <line x1="115" y1="0" x2="125" y2="390" stroke-width="8"/>
+              <line x1="215" y1="0" x2="225" y2="520" stroke-width="10"/>
+              <line x1="306" y1="0" x2="298" y2="390" stroke-width="6"/>
+            </g>
+            <!-- AYE expressway -->
+            <path d="M0,298 Q95,292 172,308 Q252,324 332,368 Q362,388 393,418" stroke="#f89c3a" stroke-width="6" fill="none"/>
+            <!-- Road text labels -->
+            <text x="28" y="161" font-size="9" fill="#5f6368" font-family="Inter,sans-serif" font-weight="500">Shenton Way</text>
+            <text x="28" y="228" font-size="9" fill="#5f6368" font-family="Inter,sans-serif" font-weight="500">Cecil St</text>
+            <text x="28" y="300" font-size="9" fill="#5f6368" font-family="Inter,sans-serif" font-weight="500">Keppel Rd</text>
+            <text x="192" y="286" font-size="8" fill="#b05500" font-family="Inter,sans-serif" font-weight="600" transform="rotate(-80,192,286)">AYE</text>
+            <!-- Buildings -->
+            <rect x="38" y="118" width="28" height="28" rx="2" fill="#d4d0c8" stroke="#bfbbb3" stroke-width="0.5"/>
+            <rect x="73" y="122" width="24" height="20" rx="2" fill="#dedad2" stroke="#bfbbb3" stroke-width="0.5"/>
+            <rect x="38" y="152" width="38" height="18" rx="2" fill="#d4d0c8" stroke="#bfbbb3" stroke-width="0.5"/>
+            <rect x="145" y="118" width="34" height="26" rx="2" fill="#d4d0c8" stroke="#bfbbb3" stroke-width="0.5"/>
+            <rect x="185" y="118" width="26" height="33" rx="2" fill="#dedad2" stroke="#bfbbb3" stroke-width="0.5"/>
+            <rect x="145" y="150" width="48" height="18" rx="2" fill="#d4d0c8" stroke="#bfbbb3" stroke-width="0.5"/>
+            <rect x="264" y="102" width="38" height="28" rx="2" fill="#d4d0c8" stroke="#bfbbb3" stroke-width="0.5"/>
+            <rect x="310" y="105" width="28" height="22" rx="2" fill="#dedad2" stroke="#bfbbb3" stroke-width="0.5"/>
+            <rect x="264" y="136" width="52" height="20" rx="2" fill="#d4d0c8" stroke="#bfbbb3" stroke-width="0.5"/>
+            <rect x="55" y="248" width="42" height="32" rx="2" fill="#d4d0c8" stroke="#bfbbb3" stroke-width="0.5"/>
+            <rect x="104" y="250" width="28" height="26" rx="2" fill="#dedad2" stroke="#bfbbb3" stroke-width="0.5"/>
+            <!-- District labels -->
+            <text x="76" y="110" font-size="11" fill="#5f6368" font-family="Inter,sans-serif" font-weight="600" opacity="0.8">CBD</text>
+            <text x="55" y="210" font-size="10" fill="#5f6368" font-family="Inter,sans-serif" font-weight="500" opacity="0.7">Tanjong Pagar</text>
+            <text x="220" y="190" font-size="10" fill="#5f6368" font-family="Inter,sans-serif" font-weight="500" opacity="0.7">Marina Bay</text>
+            <text x="280" y="445" font-size="10" fill="#3d7fc1" font-family="Inter,sans-serif" font-weight="600" opacity="0.9">Marina Bay</text>
+            <text x="292" y="458" font-size="8.5" fill="#3d7fc1" font-family="Inter,sans-serif" opacity="0.7">Reservoir</text>
+            <text x="298" y="498" font-size="9.5" fill="#3d7fc1" font-family="Inter,sans-serif" font-weight="500" opacity="0.8">Sentosa</text>
+            <text x="150" y="378" font-size="9.5" fill="#5f6368" font-family="Inter,sans-serif" font-weight="500" opacity="0.7">HarbourFront</text>
+
+            <!-- ── ROUTE OVERLAYS ── -->
+            <!-- Route glow behind bus leg -->
+            <path d="M68,162 Q78,208 88,234 Q108,278 137,308 Q162,334 178,358" stroke="#0057b8" stroke-width="12" fill="none" opacity="0.1" stroke-linecap="round"/>
+            <!-- Walk leg 1 (green dashed) -->
+            <path d="M68,140 L68,162" stroke="#1a7f37" stroke-width="3.5" fill="none" stroke-dasharray="5,3" stroke-linecap="round"/>
+            <!-- Bus leg (blue solid) -->
+            <path d="M68,162 Q78,208 88,234 Q108,278 137,308 Q162,334 178,358" stroke="#0057b8" stroke-width="4.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <!-- Direction arrows on bus leg -->
+            <g fill="#0057b8" opacity="0.55">
+              <polygon points="89,225 85,235 93,235" transform="rotate(18,89,230)"/>
+              <polygon points="132,300 128,310 136,310" transform="rotate(28,132,305)"/>
+            </g>
+            <!-- Walk leg 2 (green dashed) -->
+            <path d="M178,358 L178,378 L208,388" stroke="#1a7f37" stroke-width="3.5" fill="none" stroke-dasharray="5,3" stroke-linecap="round"/>
+            <!-- Cable car leg (purple dashed) -->
+            <path d="M208,388 Q238,415 265,435 Q290,452 305,462" stroke="#6a1fb5" stroke-width="3.5" fill="none" stroke-dasharray="7,4" stroke-linecap="round"/>
+
+            <!-- Route labels -->
+            <rect x="82" y="205" width="52" height="15" rx="4" fill="rgba(0,87,184,0.85)"/>
+            <text x="108" y="216" text-anchor="middle" font-size="8.5" fill="#fff" font-family="Inter,sans-serif" font-weight="600">Bus 97</text>
+            <rect x="218" y="408" width="60" height="15" rx="4" fill="rgba(106,31,181,0.85)"/>
+            <text x="248" y="419" text-anchor="middle" font-size="8.5" fill="#fff" font-family="Inter,sans-serif" font-weight="600">Cable Car</text>
+            <rect x="48" y="148" width="46" height="15" rx="4" fill="rgba(26,127,55,0.85)"/>
+            <text x="71" y="159" text-anchor="middle" font-size="8.5" fill="#fff" font-family="Inter,sans-serif" font-weight="600">Walk 150m</text>
+
+            <!-- STOP MARKERS -->
+            <!-- Start: Marina Bay Sands -->
+            <g transform="translate(68,135)">
+              <circle r="9" fill="#1a7f37" stroke="#fff" stroke-width="2.5"/>
+              <text x="0" y="4" text-anchor="middle" font-size="10" fill="#fff" font-family="Inter,sans-serif" font-weight="700">S</text>
+              <rect x="-22" y="-28" width="44" height="17" rx="4" fill="rgba(26,127,55,0.92)"/>
+              <text x="0" y="-16" text-anchor="middle" font-size="8.5" fill="#fff" font-family="Inter,sans-serif" font-weight="600">Start</text>
+            </g>
+            <!-- Bus stop: Tanjong Pagar -->
+            <g transform="translate(102,262)">
+              <circle r="7" fill="#0057b8" stroke="#fff" stroke-width="2"/>
+              <rect x="-34" y="-24" width="68" height="16" rx="4" fill="rgba(0,87,184,0.9)"/>
+              <text x="0" y="-12" text-anchor="middle" font-size="8.5" fill="#fff" font-family="Inter,sans-serif" font-weight="600">Tanjong Pagar</text>
+            </g>
+            <!-- HarbourFront -->
+            <g transform="translate(178,358)">
+              <circle r="7.5" fill="#0057b8" stroke="#fff" stroke-width="2"/>
+              <rect x="-34" y="-24" width="68" height="16" rx="4" fill="rgba(0,87,184,0.9)"/>
+              <text x="0" y="-12" text-anchor="middle" font-size="8.5" fill="#fff" font-family="Inter,sans-serif" font-weight="600">HarbourFront</text>
+            </g>
+            <!-- Cable Car Station -->
+            <g transform="translate(208,388)">
+              <circle r="6" fill="#6a1fb5" stroke="#fff" stroke-width="2"/>
+              <rect x="-32" y="-22" width="64" height="15" rx="4" fill="rgba(106,31,181,0.9)"/>
+              <text x="0" y="-11" text-anchor="middle" font-size="8" fill="#fff" font-family="Inter,sans-serif" font-weight="600">Cable Car Stn</text>
+            </g>
+            <!-- Destination: Sentosa -->
+            <g transform="translate(305,458)">
+              <circle r="13" fill="#d4380d" stroke="#fff" stroke-width="3"/>
+              <text x="0" y="5" text-anchor="middle" font-size="14" fill="#fff">⚑</text>
+              <rect x="-26" y="-28" width="52" height="17" rx="4" fill="rgba(212,56,13,0.92)"/>
+              <text x="0" y="-15" text-anchor="middle" font-size="8.5" fill="#fff" font-family="Inter,sans-serif" font-weight="700">SENTOSA</text>
+            </g>
+
+            <!-- Bus 97 moving marker -->
+            <g id="bus97" style="animation:bfloat 3s ease-in-out infinite;">
+              <rect x="-22" y="-13" width="44" height="26" rx="7" fill="#0057b8" stroke="#fff" stroke-width="2"/>
+              <text x="0" y="5" text-anchor="middle" font-size="12" fill="#fff" font-family="Inter,sans-serif" font-weight="700">97</text>
+            </g>
+
+            <!-- User location dot -->
+            <g id="usr">
+              <circle cx="0" cy="0" r="22" fill="rgba(0,122,255,0.1)">
+                <animate attributeName="r" values="10;24;10" dur="2.5s" repeatCount="indefinite"/>
+                <animate attributeName="opacity" values="0.7;0;0.7" dur="2.5s" repeatCount="indefinite"/>
+              </circle>
+              <circle cx="0" cy="0" r="9" fill="#007AFF" stroke="#fff" stroke-width="3"/>
+            </g>
+          </svg>
+
+          <!-- Map control buttons -->
+          <div class="map-btns">
+            <button class="map-btn" onclick="mz(1)">+</button>
+            <button class="map-btn" style="border-top:1px solid #e5e5ea;" onclick="mz(-1)">−</button>
+          </div>
+          <button class="locate-btn" onclick="mc()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#007AFF" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg>
+          </button>
+        </div>
+
+        <!-- Route summary card -->
+        <div class="route-card">
+          <div class="rhandle"></div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+              <div class="rtitle">Marina Bay → Sentosa</div>
+              <div class="rsub">4 waypoints · via HarbourFront + Cable Car</div>
+            </div>
+            <span style="background:#e3f0ff;color:#0057b8;font-size:11px;font-weight:600;padding:4px 9px;border-radius:20px;flex-shrink:0;">On track</span>
+          </div>
+          <div class="rlegs">
+            <div class="rpill walk">🚶 Walk 150m</div>
+            <div class="rpill bus">🚌 Bus 97 · 5 stops</div>
+            <div class="rpill walk">🚶 Walk 200m</div>
+            <div class="rpill cable">🚡 Cable Car</div>
+            <div class="rpill dest">⚑ Sentosa</div>
+          </div>
+          <div class="rstats">
+            <div class="rstat"><div class="rstat-v" id="m-eta">34</div><div class="rstat-l">min total</div></div>
+            <div class="rstat"><div class="rstat-v">2.8</div><div class="rstat-l">km</div></div>
+            <div class="rstat"><div class="rstat-v" id="m-cal">185</div><div class="rstat-l">cal burn</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ PAGE 2: NEARBY ══ -->
+      <div class="page" id="pg-nearby">
+        <div class="nscroll">
+          <div class="nhead">
+            <div class="ntitle">Nearby</div>
+            <div class="nsub" id="nsub">Along your route · Marina Bay, HarbourFront &amp; Sentosa</div>
+          </div>
+          <div class="nbanner">
+            <div class="nbanner-t">🎯 Suggested for your trip</div>
+            <div class="nbanner-s">Places within walking distance or one stop on your itinerary—food halls, culture spots, and top sights.</div>
+          </div>
+
+          <div class="nsec">
+            <div class="nsec-lbl">Food &amp; drink</div>
+            <div class="nrow">
+              <article class="ncard">
+                <img class="ncard-img" alt="Hawker stalls" src="https://images.unsplash.com/photo-1598918293430-3b519228dbe9?auto=format&amp;fit=crop&amp;w=400&amp;h=240&amp;q=80">
+                <div class="ncard-body">
+                  <div class="ncard-h">Maxwell Food Centre</div>
+                  <div class="ncard-d">Hainanese chicken rice, Tian Tian stall · open-air hawker hall</div>
+                  <div class="ncard-meta"><span class="ntag food">Food</span><span class="ndist">1.2 km</span></div>
+                </div>
+              </article>
+              <article class="ncard">
+                <img class="ncard-img" alt="Laksa bowl" src="https://images.unsplash.com/photo-1617093727343-374702b61a85?auto=format&amp;fit=crop&amp;w=400&amp;h=240&amp;q=80">
+                <div class="ncard-body">
+                  <div class="ncard-h">Malaysian Food Street</div>
+                  <div class="ncard-d">Penang laksa &amp; satay · Resorts World Sentosa, Level 1</div>
+                  <div class="ncard-meta"><span class="ntag food">Food</span><span class="ndist">On Sentosa</span></div>
+                </div>
+              </article>
+              <article class="ncard">
+                <img class="ncard-img" alt="Coffee shop" src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&amp;fit=crop&amp;w=400&amp;h=240&amp;q=80">
+                <div class="ncard-body">
+                  <div class="ncard-h">VivoCity cafés</div>
+                  <div class="ncard-d">Harbour views · quick coffee before the cable car</div>
+                  <div class="ncard-meta"><span class="ntag food">Café</span><span class="ndist">220 m</span></div>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <div class="nsec">
+            <div class="nsec-lbl">Culture &amp; heritage</div>
+            <div class="nrow">
+              <article class="ncard">
+                <img class="ncard-img" alt="Museum interior" src="https://images.unsplash.com/photo-1566127444979-b3d2b86756c8?auto=format&amp;fit=crop&amp;w=400&amp;h=240&amp;q=80">
+                <div class="ncard-body">
+                  <div class="ncard-h">ArtScience Museum</div>
+                  <div class="ncard-d">Lotus-shaped building · rotating exhibits at Marina Bay Sands</div>
+                  <div class="ncard-meta"><span class="ntag culture">Museum</span><span class="ndist">350 m</span></div>
+                </div>
+              </article>
+              <article class="ncard">
+                <img class="ncard-img" alt="Historic architecture" src="https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&amp;fit=crop&amp;w=400&amp;h=240&amp;q=80">
+                <div class="ncard-body">
+                  <div class="ncard-h">Chinatown Heritage</div>
+                  <div class="ncard-d">Shophouses, temples &amp; street markets · short MRT from CBD</div>
+                  <div class="ncard-meta"><span class="ntag culture">Heritage</span><span class="ndist">2.1 km</span></div>
+                </div>
+              </article>
+              <article class="ncard">
+                <img class="ncard-img" alt="Concert hall" src="https://images.unsplash.com/photo-1518996993718-55cc43344591?auto=format&amp;fit=crop&amp;w=400&amp;h=240&amp;q=80">
+                <div class="ncard-body">
+                  <div class="ncard-h">Esplanade — Theatres</div>
+                  <div class="ncard-d">“Durian” domes · free lobby performances some evenings</div>
+                  <div class="ncard-meta"><span class="ntag culture">Performing arts</span><span class="ndist">900 m</span></div>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <div class="nsec">
+            <div class="nsec-lbl">Sights &amp; attractions</div>
+            <div class="nrow">
+              <article class="ncard">
+                <img class="ncard-img" alt="Singapore skyline" src="https://images.unsplash.com/photo-1525625293386-3f6664bde013?auto=format&amp;fit=crop&amp;w=400&amp;h=240&amp;q=80">
+                <div class="ncard-body">
+                  <div class="ncard-h">Gardens by the Bay</div>
+                  <div class="ncard-d">Supertree Grove &amp; Cloud Forest · iconic skyline backdrop</div>
+                  <div class="ncard-meta"><span class="ntag sights">Nature</span><span class="ndist">800 m</span></div>
+                </div>
+              </article>
+              <article class="ncard">
+                <img class="ncard-img" alt="Theme park" src="https://images.unsplash.com/photo-1580217584469-e7d55cdd8118?auto=format&amp;fit=crop&amp;w=400&amp;h=240&amp;q=80">
+                <div class="ncard-body">
+                  <div class="ncard-h">Universal Studios Singapore</div>
+                  <div class="ncard-d">Rides &amp; shows · main gate via Waterfront Station</div>
+                  <div class="ncard-meta"><span class="ntag sights">Theme park</span><span class="ndist">On Sentosa</span></div>
+                </div>
+              </article>
+              <article class="ncard">
+                <img class="ncard-img" alt="Beach" src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&amp;fit=crop&amp;w=400&amp;h=240&amp;q=80">
+                <div class="ncard-body">
+                  <div class="ncard-h">Siloso Beach</div>
+                  <div class="ncard-d">Kayaks, beach bars &amp; sunset views · matches your itinerary stop</div>
+                  <div class="ncard-meta"><span class="ntag sights">Beach</span><span class="ndist">12 min walk</span></div>
+                </div>
+              </article>
+              <article class="ncard">
+                <img class="ncard-img" alt="Cable car" src="https://images.unsplash.com/photo-1565967511843-85e6bfdd522c?auto=format&amp;fit=crop&amp;w=400&amp;h=240&amp;q=80">
+                <div class="ncard-body">
+                  <div class="ncard-h">Mount Faber cable car</div>
+                  <div class="ncard-d">Scenic ride to Sentosa · same line as your planned transfer</div>
+                  <div class="ncard-meta"><span class="ntag sights">View</span><span class="ndist">This route</span></div>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ PAGE 3: ITINERARY ══ -->
+      <div class="page" id="pg-itin">
+        <div class="iscroll">
+          <div class="ihead">
+            <div class="ititle">Today's Itinerary</div>
+            <div class="isub">Marina Bay → Sentosa · Singapore</div>
+          </div>
+
+          <!-- GPS row -->
+          <div class="igps-row">
+            <div>
+              <div class="igps-lbl">Live Location Updates</div>
+              <div class="igps-sub" id="igs">Simulated movement along route</div>
+            </div>
+            <div class="ttrack" id="itog" onclick="toggleGPS()"><div class="tknob"></div></div>
+          </div>
+
+          <!-- Location banner -->
+          <div class="loc-banner sim" id="lbanner">
+            <div class="lbico">🎯</div>
+            <div class="lbtxt">
+              <div class="lbtitle" id="lbtitle">Simulated · Bus 97 en route</div>
+              <div class="lbsub" id="lbsub">Tap to advance your position</div>
+            </div>
+            <button class="lbbtn" onclick="advance()">Advance →</button>
+          </div>
+
+          <!-- Timeline -->
+          <div id="itl"></div>
+        </div>
+      </div>
+
+    </div><!-- /pages -->
+
+    <!-- Tab bar -->
+    <div class="tabs">
+      <div class="tab on" onclick="goTab('map',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+        <span>Map</span>
+      </div>
+      <div class="tab" onclick="goTab('nearby',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="7" fill="none"/><circle cx="12" cy="12" r="10.5" fill="none" opacity="0.35"/></svg>
+        <span>Nearby</span>
+      </div>
+      <div class="tab" onclick="goTab('itin',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+        <span>Itinerary</span>
+      </div>
+    </div>
+  </div><!-- /screen -->
+</div><!-- /shell -->
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────
+let steps=4821,cal=312,dist=3.4;
+let gpsOn=false, watchId=null, simLocIdx=2, tick=0, mapScale=1;
+
+const ITIN=[
+  {t:'09:00',ico:'🏨',name:'Depart Marina Bay Sands',desc:'Hotel checkout complete. Bus stop 150m north at B1 exit.',state:'done',lat:1.2840,lng:103.8607,dist:null},
+  {t:'09:10',ico:'🚶',name:'Walk to Bus Stop',desc:'Head north on Marina Blvd, cross at pedestrian signal.',state:'done',lat:1.2835,lng:103.8600,dist:'150m walk'},
+  {t:'09:15',ico:'🚌',name:'Board Bus 97',desc:'Alight at HarbourFront Interchange — 5 stops. Tap EZ-Link at reader.',state:'now',lat:1.2800,lng:103.8500,dist:null,eta:true},
+  {t:'09:31',ico:'📍',name:'Alight at HarbourFront',desc:'Walk south through VivoCity to cable car station.',state:'next',lat:1.2644,lng:103.8200,dist:'200m walk ahead'},
+  {t:'09:45',ico:'🚡',name:'Cable Car to Sentosa',desc:'12-min scenic ride. S$38 adult return, buy at kiosk.',state:'later',lat:1.2570,lng:103.8200,dist:null},
+  {t:'10:00',ico:'🎢',name:'Universal Studios Singapore',desc:'Main entrance via Waterfront Stn. Allow 3–4 hours.',state:'later',lat:1.2540,lng:103.8238,dist:null},
+  {t:'13:00',ico:'🍜',name:'Lunch — Malaysian Food Street',desc:'Level 1, Resorts World. Try the Penang Laksa.',state:'later',lat:1.2540,lng:103.8220,dist:null},
+  {t:'14:30',ico:'🏖',name:'Siloso Beach',desc:'Wave pool & kayak rentals. Water shoes recommended.',state:'later',lat:1.2490,lng:103.8180,dist:null},
+  {t:'17:00',ico:'🚌',name:'Return — Bus 97',desc:'Sentosa Gateway → Marina Bay FC. Last bus 23:00.',state:'later',lat:1.2644,lng:103.8200,dist:null},
+];
+
+const SIM_LOCS=[
+  {title:'Marina Bay Sands',sub:'Hotel departure zone'},
+  {title:'Marina Blvd',sub:'Walking to bus stop'},
+  {title:'Bus 97 — en route',sub:'Travelling to HarbourFront'},
+  {title:'HarbourFront MRT',sub:'Arrived · heading to cable car'},
+  {title:'Cable Car Station',sub:'Boarding cable car'},
+  {title:'Sentosa Gateway',sub:'Arrived at Sentosa'},
+  {title:'Universal Studios',sub:'At the park entrance'},
+  {title:'Resorts World',sub:'Lunch break'},
+  {title:'Siloso Beach',sub:'Afternoon activity'},
+];
+
+const BPTS=[{x:68,y:162},{x:78,y:195},{x:88,y:234},{x:108,y:278},{x:137,y:308},{x:162,y:334},{x:178,y:358}];
+let bIdx=0;
+
+// ── ITINERARY RENDER ──────────────────────────────────────────────────
+function renderItin(){
+  const el=document.getElementById('itl');
+  if(!el)return;
+  const groups=[
+    {label:'Completed',items:ITIN.filter(i=>i.state==='done')},
+    {label:'Now & Next',items:ITIN.filter(i=>i.state==='now'||i.state==='next')},
+    {label:'Later Today',items:ITIN.filter(i=>i.state==='later')},
+  ];
+  let h='';
+  groups.forEach(g=>{
+    if(!g.items.length)return;
+    h+=`<div class="isec-lbl">${g.label}</div>`;
+    g.items.forEach((it,idx)=>{
+      const isLast=idx===g.items.length-1;
+      const nc=it.state;
+      const cc=it.state==='now'?'nowcard':it.state==='next'?'nextcard':'';
+      const lc=it.state==='done'?'done':it.state==='now'?'active':'pending';
+      const nodeIco=it.state==='done'?'✓':it.ico;
+      let badges='';
+      if(it.state==='now')  badges+=`<span class="ibadge ib-now"><span class="ndot"></span> In progress</span>`;
+      if(it.state==='next') badges+=`<span class="ibadge ib-next">Next stop</span>`;
+      if(it.state==='done') badges+=`<span class="ibadge ib-done">✓ Complete</span>`;
+      if(it.dist)           badges+=`<span class="ibadge ib-dist">📍 ${it.dist}</span>`;
+      const etaHtml=it.eta?`<div class="etabar"><div class="etafill" id="etafill" style="width:55%;"></div></div><div style="font-size:11px;color:#007AFF;margin-top:4px;font-weight:500;">~8 min remaining</div>`:'';
+      h+=`<div class="iitem">
+        <div class="itline">
+          <div class="inode ${nc}">${nodeIco}</div>
+          ${!isLast?`<div class="iline ${lc}"></div>`:''}
+        </div>
+        <div class="icontent ${cc}">
+          <div class="itime">${it.t}</div>
+          <div class="iname">${it.state!=='done'?it.ico+' ':''}${it.name}</div>
+          <div class="idesc">${it.desc}</div>
+          ${etaHtml}
+          <div style="display:flex;gap:5px;flex-wrap:wrap;${badges?'margin-top:2px;':''}">${badges}</div>
+        </div>
+      </div>`;
+    });
+  });
+  el.innerHTML=h;
+}
+
+// ── ADVANCE SIMULATION ────────────────────────────────────────────────
+function advance(){
+  simLocIdx=Math.min(simLocIdx+1,SIM_LOCS.length-1);
+  const loc=SIM_LOCS[simLocIdx];
+  document.getElementById('lbtitle').textContent=`Simulated · ${loc.title}`;
+  document.getElementById('lbsub').textContent=loc.sub;
+  // Advance itinerary state
+  const ni=ITIN.findIndex(i=>i.state==='now');
+  if(ni>=0&&simLocIdx>2){
+    ITIN[ni].state='done';
+    delete ITIN[ni].eta;
+    if(ni+1<ITIN.length){
+      ITIN[ni+1].state='now';
+      if(ni+2<ITIN.length)ITIN[ni+2].state='next';
+    }
+  }
+  // Move user dot on map
+  const mapPts=[{x:68,y:135},{x:68,y:155},{x:88,y:234},{x:137,y:308},{x:178,y:358},{x:208,y:388},{x:265,y:435},{x:290,y:452},{x:278,y:440}];
+  const pt=mapPts[Math.min(simLocIdx,mapPts.length-1)];
+  const usr=document.getElementById('usr');
+  if(usr)usr.setAttribute('transform',`translate(${pt.x},${pt.y})`);
+  // Bump stats
+  steps+=Math.floor(Math.random()*300+120);
+  dist=parseFloat((steps*0.0007).toFixed(1));
+  cal=Math.round(steps*0.065);
+  fl('itl');renderItin();updateHealth();
+}
+
+// ── GPS ───────────────────────────────────────────────────────────────
+function toggleGPS(){
+  gpsOn=!gpsOn;
+  ['gtog','itog'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.className='ttrack'+(gpsOn?' on':'');
+  });
+  const gstat=document.getElementById('gstat');
+  const igs=document.getElementById('igs');
+  const lb=document.getElementById('lbanner');
+  if(gpsOn){
+    if(gstat)gstat.textContent='Requesting GPS…';
+    if(igs)igs.textContent='Requesting GPS…';
+    if(lb){lb.className='loc-banner gps';document.getElementById('lbtitle').textContent='GPS · Locating…';document.getElementById('lbsub').textContent='High-accuracy positioning';}
+    if(!navigator.geolocation){gpsErr('Not supported');return;}
+    watchId=navigator.geolocation.watchPosition(onGPS,e=>gpsErr(e.message),{enableHighAccuracy:true,maximumAge:5000,timeout:10000});
+  } else {
+    if(watchId)navigator.geolocation.clearWatch(watchId);
+    watchId=null;
+    if(gstat)gstat.textContent='Using simulated location';
+    if(igs)igs.textContent='Simulated movement along route';
+    if(lb){lb.className='loc-banner sim';document.getElementById('lbtitle').textContent=`Simulated · ${SIM_LOCS[simLocIdx].title}`;document.getElementById('lbsub').textContent=SIM_LOCS[simLocIdx].sub;}
+  }
+}
+
+function onGPS(pos){
+  const {latitude:la,longitude:lo,accuracy:ac}=pos.coords;
+  const gstat=document.getElementById('gstat');const igs=document.getElementById('igs');
+  if(gstat)gstat.textContent=`GPS · ±${Math.round(ac)}m`;
+  if(igs)igs.textContent=`GPS active · ±${Math.round(ac)}m accuracy`;
+  document.getElementById('lbtitle').textContent=`GPS · ${la.toFixed(4)}, ${lo.toFixed(4)}`;
+  document.getElementById('lbsub').textContent=`Accuracy ±${Math.round(ac)}m`;
+  // Map dot
+  const sx=(lo-103.840)*4000+196,sy=(1.295-la)*4000+195;
+  const usr=document.getElementById('usr');
+  if(usr)usr.setAttribute('transform',`translate(${sx.toFixed(1)},${sy.toFixed(1)})`);
+  // Auto-advance itinerary if near a waypoint
+  const nit=ITIN.find(i=>i.state==='now');
+  if(nit){
+    const dl=la-nit.lat,dg=lo-nit.lng,dm=Math.sqrt(dl*dl+dg*dg)*111000;
+    if(dm<120){
+      nit.state='done'; delete nit.eta;
+      const nxi=ITIN.findIndex(i=>i.state==='next');
+      if(nxi>=0){ITIN[nxi].state='now';if(nxi+1<ITIN.length)ITIN[nxi+1].state='next';}
+      fl('itl');renderItin();
+    }
+  }
+}
+
+function gpsErr(msg){
+  gpsOn=false;
+  ['gtog','itog'].forEach(id=>{const el=document.getElementById(id);if(el)el.className='ttrack';});
+  const gstat=document.getElementById('gstat');const igs=document.getElementById('igs');
+  if(gstat)gstat.textContent='GPS unavailable — using simulation';
+  if(igs)igs.textContent='GPS failed — simulated mode';
+  const lb=document.getElementById('lbanner');
+  if(lb)lb.className='loc-banner sim';
+}
+
+// ── HEALTH UI ─────────────────────────────────────────────────────────
+function updateHealth(){
+  const s=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  s('m-cal',cal);
+}
+
+// ── BUS ANIMATION ─────────────────────────────────────────────────────
+function moveBus(){
+  const pt=BPTS[bIdx];
+  const b=document.getElementById('bus97');
+  if(b)b.setAttribute('transform',`translate(${pt.x},${pt.y})`);
+  bIdx=(bIdx+1)%BPTS.length;
+}
+
+// ── MAP ───────────────────────────────────────────────────────────────
+function mz(d){mapScale=Math.max(0.7,Math.min(2.5,mapScale+d*0.25));const s=document.getElementById('msvg');if(s)s.style.transform=`scale(${mapScale})`;}
+function mc(){mapScale=1;const s=document.getElementById('msvg');if(s)s.style.transform='scale(1)';}
+
+// ── TAB SWITCH ────────────────────────────────────────────────────────
+function goTab(name,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('pg-'+name).classList.add('active');
+  el.classList.add('on');
+  const sb=document.getElementById('sbar');
+  sb.className='sbar '+(name==='map'?'on-map':'on-light');
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────
+function fl(id){const e=document.getElementById(id);if(!e)return;e.classList.remove('flash');void e.offsetWidth;e.classList.add('flash');}
+
+function clock(){
+  const n=new Date(),h=n.getHours(),m=n.getMinutes();
+  const el=document.getElementById('stime');
+  if(el)el.textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
+
+function nearbySub(){
+  const de=document.getElementById('nsub');
+  if(de)de.textContent=new Date().toLocaleDateString('en-SG',{weekday:'long',month:'long',day:'numeric'})+' · Marina Bay, HarbourFront & Sentosa';
+}
+
+// ── PASSIVE SIM ───────────────────────────────────────────────────────
+setInterval(()=>{
+  tick++;
+  if(tick%4===0)moveBus();
+  if(tick%3===0&&!gpsOn){
+    steps+=Math.floor(Math.random()*3);
+    cal=Math.round(steps*0.065);
+    dist=parseFloat((steps*0.0007).toFixed(1));
+    updateHealth();
+  }
+  if(tick%12===0){const e=document.getElementById('m-eta');if(e){let v=parseInt(e.textContent);if(v>1)e.textContent=v-1;}}
+},800);
+
+// ── INIT ──────────────────────────────────────────────────────────────
+(function(){
+  clock();setInterval(clock,1000);
+  nearbySub();
+  // Initial user + bus positions
+  const usr=document.getElementById('usr');if(usr)usr.setAttribute('transform','translate(88,234)');
+  const b=document.getElementById('bus97');if(b)b.setAttribute('transform',`translate(${BPTS[0].x},${BPTS[0].y})`);
+  updateHealth();renderItin();
+})();
+</script>
+</body>
+</html>
